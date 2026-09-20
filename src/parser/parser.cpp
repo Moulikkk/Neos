@@ -3,6 +3,40 @@
 #include "parser.h"
 using namespace std;
 
+std::string tokenTypeToString(TokenType type)
+{
+    switch (type)
+    {
+        case NUMBER: return "number";
+        case PLUS: return "+";
+        case MINUS: return "-";
+        case STAR: return "*";
+        case SLASH: return "/";
+        case LPAREN: return "(";
+        case RPAREN: return ")";
+        case LBRACE: return "{";
+        case RBRACE: return "}";
+        case EQUAL: return "=";
+        case EQUAL_EQUAL: return "==";
+        case BANG_EQUAL: return "!=";
+        case LESS: return "<";
+        case GREATER: return ">";
+        case LESS_EQUAL: return "<=";
+        case GREATER_EQUAL: return ">=";
+        case IDENTIFIER: return "identifier";
+        case IF: return "if";
+        case ELSE: return "else";
+        case WHILE: return "while";
+        case FN: return "fn";
+        case RETURN: return "return";
+        case PRINT: return "print";
+        case COMMA: return ",";
+        case NEWLINE: return "newline";
+        case END: return "end of file";
+        default: return "unknown";
+    }
+}
+
 Parser::Parser(Lexer &l) : lexer(l)
 {
     curr_Token = lexer.nextToken();
@@ -19,7 +53,11 @@ void Parser::consume(TokenType expectedType)
 {
     if (curr_Token.type != expectedType)
     {
-        throw std::runtime_error("Unexpected token");
+        throw std::runtime_error(
+            "[Neos Error] Line " + std::to_string(curr_Token.line) +
+            ": expected '" + tokenTypeToString(expectedType) +
+            "' but got '" + tokenTypeToString(curr_Token.type) + "'"
+        );
     }
 
     advance();
@@ -59,7 +97,12 @@ std::unique_ptr<ASTNode> Parser::parseFactor()
         return std::make_unique<VariableNode>(name);
     }
 
-    throw std::runtime_error("Expected number or '('");
+   std::string tokenValue = curr_Token.value.empty() ? tokenTypeToString(curr_Token.type) : curr_Token.value;
+
+throw std::runtime_error(
+    "[Neos Error] Line " + std::to_string(curr_Token.line) +
+    ": unexpected token '" + tokenValue + "'"
+);
 }
 
 std::unique_ptr<ASTNode> Parser::parseTerm()

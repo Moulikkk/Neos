@@ -18,6 +18,7 @@ enum TokenType
     GREATER_EQUAL,
     EQUAL_EQUAL,
     BANG_EQUAL,
+    EQUAL,
     IDENTIFIER,
     IF,
     ELSE,
@@ -27,20 +28,21 @@ enum TokenType
     RETURN,
     COMMA,
     NEWLINE,
-    END,
-    EQUAL
+    END
 };
 
 struct Token
 {
     TokenType type;
     std::string value;
+    int line = 0;
 };
 
 class Lexer
 {
     std::string input;
     int curr_position = 0;
+    int line = 1;
 
 public:
     Lexer(std::string s);
