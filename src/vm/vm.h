@@ -1,19 +1,23 @@
 #pragma once
 #include <vector>
 #include <map>
+#include <variant>
+#include <string>
 #include "../compiler/compiler.h"
 using namespace std;
+
+using Value = std::variant<double, std::string>;
 
 struct CallFrame
 {
     int returnAddress;
-    map<string, double> variables;
+    map<string, Value> variables;
 };
 
 class VM
 {
-    vector<double> stack;
-    map<string, double> variables;
+    vector<Value> stack;
+    map<string, Value> variables;
     vector<CallFrame> callStack;
 
 public:

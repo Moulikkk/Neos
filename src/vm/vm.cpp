@@ -14,23 +14,47 @@ void VM::execute(Chunk chunk)
       stack.push_back(chunk.constants[chunk.code[ip]]);
       ip++;
     }
+    else if (chunk.code[ip] == OP_PUSH_STRING)
+    {
+      ip++;
+      stack.push_back(chunk.stringConstants[chunk.code[ip]]);
+      ip++;
+    }
     else if (chunk.code[ip] == OP_ADD)
     {
-      double right = stack.back();
+      Value right = stack.back();
       stack.pop_back();
 
-      double left = stack.back();
+      Value left = stack.back();
       stack.pop_back();
 
-      stack.push_back(left + right);
+      if (holds_alternative<string>(left) && holds_alternative<string>(right))
+      {
+        string leftString = get<string>(left);
+        string rightString = get<string>(right);
+
+        stack.push_back(leftString + rightString);
+      }
+      else if (holds_alternative<double>(left) && holds_alternative<double>(right))
+      {
+        double leftNumber = get<double>(left);
+        double rightNumber = get<double>(right);
+
+        stack.push_back(leftNumber + rightNumber);
+      }
+      else
+      {
+        throw runtime_error("cannot add string and number");
+      }
+
       ip++;
     }
     else if (chunk.code[ip] == OP_SUB)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
       stack.push_back(left - right);
@@ -38,10 +62,10 @@ void VM::execute(Chunk chunk)
     }
     else if (chunk.code[ip] == OP_MUL)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
       stack.push_back(left * right);
@@ -49,10 +73,10 @@ void VM::execute(Chunk chunk)
     }
     else if (chunk.code[ip] == OP_DIV)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
       stack.push_back(left / right);
@@ -60,68 +84,68 @@ void VM::execute(Chunk chunk)
     }
     else if (chunk.code[ip] == OP_LESS)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
-      stack.push_back(left < right);
+      stack.push_back(static_cast<double>(left < right));
       ip++;
     }
     else if (chunk.code[ip] == OP_GREATER)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
-      stack.push_back(left > right);
+      stack.push_back(static_cast<double>(left > right));
       ip++;
     }
     else if (chunk.code[ip] == OP_LESS_EQUAL)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
-      stack.push_back(left <= right);
+      stack.push_back(static_cast<double>(left <= right));
       ip++;
     }
     else if (chunk.code[ip] == OP_GREATER_EQUAL)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
-      stack.push_back(left >= right);
+      stack.push_back(static_cast<double>(left >= right));
       ip++;
     }
     else if (chunk.code[ip] == OP_EQUAL)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
-      stack.push_back(left == right);
+      stack.push_back(static_cast<double>(left == right));
       ip++;
     }
     else if (chunk.code[ip] == OP_NOT_EQUAL)
     {
-      double right = stack.back();
+      double right = get<double>(stack.back());
       stack.pop_back();
 
-      double left = stack.back();
+      double left = get<double>(stack.back());
       stack.pop_back();
 
-      stack.push_back(left != right);
+      stack.push_back(static_cast<double>(left != right));
       ip++;
     }
     else if(chunk.code[ip] == OP_JUMP)
@@ -132,7 +156,7 @@ void VM::execute(Chunk chunk)
     }
     else if(chunk.code[ip] == OP_JUMP_IF_FALSE)
     {
-      double condition = stack.back();
+      double condition = get<double>(stack.back());
       stack.pop_back();
 
       ip++;
@@ -150,7 +174,7 @@ void VM::execute(Chunk chunk)
     }
     else if (chunk.code[ip] == OP_STORE)
     {
-      double value = stack.back();
+      Value value = stack.back();
       stack.pop_back();
 
       ip++;
@@ -201,7 +225,7 @@ void VM::execute(Chunk chunk)
 
       for (int i = function.parameterCount - 1; i >= 0; i--)
       {
-        double argument = stack.back();
+        Value argument = stack.back();
         stack.pop_back();
 
         frame.variables[function.parameters[i]] = argument;
@@ -213,7 +237,7 @@ void VM::execute(Chunk chunk)
     }
     else if (chunk.code[ip] == OP_RETURN)
     {
-      double returnValue = stack.back();
+      Value returnValue = stack.back();
       stack.pop_back();
 
       int returnAddress = callStack.back().returnAddress;
@@ -226,8 +250,18 @@ void VM::execute(Chunk chunk)
     }
     else if (chunk.code[ip] == OP_PRINT)
     {
-      cout << stack.back() << endl;
+      Value value = stack.back();
       stack.pop_back();
+
+      if (holds_alternative<double>(value))
+      {
+        cout << get<double>(value) << endl;
+      }
+      else
+      {
+        cout << get<string>(value) << endl;
+      }
+
       ip++;
     }
     else if (chunk.code[ip] == OP_HALT)

@@ -18,6 +18,16 @@ struct NumberNode : ASTNode
     }
 };
 
+struct StringNode : ASTNode
+{
+    std::string value;
+
+    StringNode(std::string s)
+    {
+        value = s;
+    }
+};
+
 struct BinaryOpNode : ASTNode
 {
     std::string op;

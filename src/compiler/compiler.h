@@ -6,6 +6,8 @@ using namespace std;
 enum OpCode
 {
     OP_PUSH,
+    OP_PUSH_STRING,
+
     OP_ADD,
     OP_SUB,
     OP_MUL,
@@ -43,6 +45,7 @@ struct Chunk
 {
     vector<int> code;
     vector<double> constants;
+    vector<string> stringConstants;
     vector<string> variables;
     vector<FunctionInfo> functions;
 };

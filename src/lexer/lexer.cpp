@@ -133,6 +133,30 @@ Token Lexer::nextToken()
         throw runtime_error("Unexpected '!' on line " + to_string(line));
     }
 
+    if (input[curr_position] == '"')
+    {
+        curr_position++;
+
+        Token String;
+        String.type = TokenType::STRING;
+        String.line = line;
+
+        while (curr_position < input.size() && input[curr_position] != '"')
+        {
+            String.value.push_back(input[curr_position]);
+            curr_position++;
+        }
+
+        if (curr_position >= input.size())
+        {
+            throw runtime_error("unclosed string on line " + to_string(line));
+        }
+
+        curr_position++;
+
+        return String;
+    }
+
     if (isDigit(input[curr_position]))
     {
         Token Number;

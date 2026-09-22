@@ -8,6 +8,7 @@ std::string tokenTypeToString(TokenType type)
     switch (type)
     {
         case NUMBER: return "number";
+        case STRING: return "string";
         case PLUS: return "+";
         case MINUS: return "-";
         case STAR: return "*";
@@ -73,6 +74,14 @@ std::unique_ptr<ASTNode> Parser::parseFactor()
         return std::make_unique<NumberNode>(value);
     }
 
+    if (curr_Token.type == STRING)
+    {
+        std::string value = curr_Token.value;
+        consume(STRING);
+
+        return std::make_unique<StringNode>(value);
+    }
+
     if (curr_Token.type == LPAREN)
     {
         consume(LPAREN);
@@ -97,12 +106,12 @@ std::unique_ptr<ASTNode> Parser::parseFactor()
         return std::make_unique<VariableNode>(name);
     }
 
-   std::string tokenValue = curr_Token.value.empty() ? tokenTypeToString(curr_Token.type) : curr_Token.value;
+    std::string tokenValue = curr_Token.value.empty() ? tokenTypeToString(curr_Token.type) : curr_Token.value;
 
-throw std::runtime_error(
-    "[Neos Error] Line " + std::to_string(curr_Token.line) +
-    ": unexpected token '" + tokenValue + "'"
-);
+    throw std::runtime_error(
+        "[Neos Error] Line " + std::to_string(curr_Token.line) +
+        ": unexpected token '" + tokenValue + "'"
+    );
 }
 
 std::unique_ptr<ASTNode> Parser::parseTerm()
@@ -212,78 +221,74 @@ std::unique_ptr<ASTNode> Parser::parseAssignment()
 }
 
 std::unique_ptr<ASTNode> Parser::parseIf()
+{
+    consume(IF);
+
+    consume(LPAREN);
+    std::unique_ptr<ASTNode> condition = parseComparison();
+    consume(RPAREN);
+
+    consume(LBRACE);
+
+    std::unique_ptr<ProgramNode> body = std::make_unique<ProgramNode>();
+
+    while(curr_Token.type != RBRACE)
     {
-        consume(IF);
-
-        consume(LPAREN);
-        std::unique_ptr<ASTNode> condition = parseComparison();
-        consume(RPAREN);
-        
-        consume(LBRACE);
-
-        std::unique_ptr<ProgramNode> body = std::make_unique<ProgramNode>();
-
-        while(curr_Token.type != RBRACE)
+        if (curr_Token.type == NEWLINE)
         {
-            if (curr_Token.type == NEWLINE)
-            {
-                consume(NEWLINE);
-                continue;
-            }
-
-            body->statements.push_back(parseStatement());
-
-            if (curr_Token.type == NEWLINE)
-            {
-                consume(NEWLINE);
-            }
+            consume(NEWLINE);
+            continue;
         }
 
-        consume(RBRACE);
+        body->statements.push_back(parseStatement());
 
-        if(curr_Token.type == ELSE)
+        if (curr_Token.type == NEWLINE)
         {
-            consume(ELSE);
-
-            
-            
-
-            if(curr_Token.type == IF)
-            {
-                std::unique_ptr<ASTNode> result =  parseIf();
-                return std::make_unique<IfNode>(std::move(condition),std::move(body),std::move(result));
-            }
-            else
-            {
-                std::unique_ptr<ProgramNode> elsebranch = std::make_unique<ProgramNode>();
-
-                consume(LBRACE);
-
-                while(curr_Token.type != RBRACE)
-                {
-                    if (curr_Token.type == NEWLINE)
-                    {
-                        consume(NEWLINE);
-                        continue;
-                    }
-
-                    elsebranch->statements.push_back(parseStatement());
-
-                    if (curr_Token.type == NEWLINE)
-                    {
-                    consume(NEWLINE);
-                    }   
-                }
-                
-                consume(RBRACE);
-
-                return std::make_unique<IfNode>(std::move(condition),std::move(body),std::move(elsebranch)); 
-                 
-            }
+            consume(NEWLINE);
         }
-
-        return std::make_unique<IfNode>(std::move(condition),std::move(body));
     }
+
+    consume(RBRACE);
+
+    if(curr_Token.type == ELSE)
+    {
+        consume(ELSE);
+
+        if(curr_Token.type == IF)
+        {
+            std::unique_ptr<ASTNode> result = parseIf();
+            return std::make_unique<IfNode>(std::move(condition),std::move(body),std::move(result));
+        }
+        else
+        {
+            std::unique_ptr<ProgramNode> elsebranch = std::make_unique<ProgramNode>();
+
+            consume(LBRACE);
+
+            while(curr_Token.type != RBRACE)
+            {
+                if (curr_Token.type == NEWLINE)
+                {
+                    consume(NEWLINE);
+                    continue;
+                }
+
+                elsebranch->statements.push_back(parseStatement());
+
+                if (curr_Token.type == NEWLINE)
+                {
+                    consume(NEWLINE);
+                }
+            }
+
+            consume(RBRACE);
+
+            return std::make_unique<IfNode>(std::move(condition),std::move(body),std::move(elsebranch));
+        }
+    }
+
+    return std::make_unique<IfNode>(std::move(condition),std::move(body));
+}
 
 std::unique_ptr<ASTNode> Parser::parseStatement()
 {
@@ -299,7 +304,7 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
     {
         if(peek_Token.type == EQUAL)
         {
-           return parseAssignment();
+            return parseAssignment();
         }
         else
         {
@@ -320,7 +325,7 @@ std::unique_ptr<ASTNode> Parser::parseStatement()
     }
     else
     {
-       return parseComparison();
+        return parseComparison();
     }
 }
 
@@ -425,7 +430,7 @@ std::unique_ptr<ASTNode> Parser::parseFunction()
 
     std::unique_ptr<ProgramNode> body = std::make_unique<ProgramNode>();
 
-    while (curr_Token.type != TokenType::RBRACE)
+    while (curr_Token.type != RBRACE)
     {
         if (curr_Token.type == TokenType::NEWLINE)
         {

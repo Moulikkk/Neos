@@ -27,6 +27,7 @@ enum TokenType
     FN,
     RETURN,
     COMMA,
+    STRING,
     NEWLINE,
     END
 };

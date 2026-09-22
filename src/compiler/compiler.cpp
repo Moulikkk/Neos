@@ -46,6 +46,7 @@ void Compiler::compile(ASTNode *node)
 
     ProgramNode *program = dynamic_cast<ProgramNode *>(node);
     NumberNode *num = dynamic_cast<NumberNode *>(node);
+    StringNode *stringNode = dynamic_cast<StringNode *>(node);
     BinaryOpNode *bin = dynamic_cast<BinaryOpNode *>(node);
     VariableNode *var = dynamic_cast<VariableNode *>(node);
     AssignmentNode *assign = dynamic_cast<AssignmentNode *>(node);
@@ -78,6 +79,18 @@ void Compiler::compile(ASTNode *node)
         int index = chunk.constants.size() - 1;
 
         chunk.code.push_back(OP_PUSH);
+        chunk.code.push_back(index);
+
+        return;
+    }
+
+    else if (stringNode != nullptr)
+    {
+        chunk.stringConstants.push_back(stringNode->value);
+
+        int index = chunk.stringConstants.size() - 1;
+
+        chunk.code.push_back(OP_PUSH_STRING);
         chunk.code.push_back(index);
 
         return;
