@@ -28,6 +28,8 @@ enum TokenType
     RETURN,
     COMMA,
     STRING,
+    TRUE,
+    FALSE,
     NEWLINE,
     END
 };

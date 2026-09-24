@@ -264,6 +264,13 @@ void VM::execute(Chunk chunk)
 
       ip++;
     }
+    else if (chunk.code[ip] == OP_NEGATE)
+    {
+      double val = get<double>(stack.back());
+      stack.pop_back();
+      stack.push_back(-val);
+      ip++;
+    }
     else if (chunk.code[ip] == OP_HALT)
     {
       return;

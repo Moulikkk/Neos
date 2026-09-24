@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <map>
 #include "../parser/parser.h"
 using namespace std;
 
@@ -7,11 +8,13 @@ enum OpCode
 {
     OP_PUSH,
     OP_PUSH_STRING,
+    OP_PUSH_BOOL,
 
     OP_ADD,
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    OP_NEGATE,
 
     OP_LESS,
     OP_GREATER,
@@ -53,7 +56,6 @@ struct Chunk
 class Compiler
 {
     Chunk chunk;
-
     void compile(ASTNode *node);
     int getVariableIndex(const string &name);
     int getFunctionIndex(const string &name);

@@ -4,280 +4,165 @@ using namespace std;
 
 int Compiler::getVariableIndex(const string &name)
 {
-    int index = -1;
-
     for (int i = 0; i < chunk.variables.size(); i++)
-    {
-        if (name == chunk.variables[i])
-        {
-            index = i;
-            break;
-        }
-    }
-
-    if (index == -1)
-    {
-        chunk.variables.push_back(name);
-        index = chunk.variables.size() - 1;
-    }
-
-    return index;
+        if (name == chunk.variables[i]) return i;
+    chunk.variables.push_back(name);
+    return chunk.variables.size() - 1;
 }
 
 int Compiler::getFunctionIndex(const string &name)
 {
     for (int i = 0; i < chunk.functions.size(); i++)
-    {
-        if (chunk.functions[i].name == name)
-        {
-            return i;
-        }
-    }
-
+        if (chunk.functions[i].name == name) return i;
     throw runtime_error("Unknown function: " + name);
 }
 
 void Compiler::compile(ASTNode *node)
 {
-    if (node == nullptr)
+    if (node == nullptr) return;
+
+    if (auto *program = dynamic_cast<ProgramNode *>(node))
     {
+        for (auto &s : program->statements)
+            if (!dynamic_cast<FunctionNode *>(s.get()))
+                compile(s.get());
         return;
     }
 
-    ProgramNode *program = dynamic_cast<ProgramNode *>(node);
-    NumberNode *num = dynamic_cast<NumberNode *>(node);
-    StringNode *stringNode = dynamic_cast<StringNode *>(node);
-    BinaryOpNode *bin = dynamic_cast<BinaryOpNode *>(node);
-    VariableNode *var = dynamic_cast<VariableNode *>(node);
-    AssignmentNode *assign = dynamic_cast<AssignmentNode *>(node);
-    IfNode *ifNode = dynamic_cast<IfNode *>(node);
-    WhileNode *whileNode = dynamic_cast<WhileNode *>(node);
-    FunctionNode *functionNode = dynamic_cast<FunctionNode *>(node);
-    ReturnNode *returnNode = dynamic_cast<ReturnNode *>(node);
-    CallNode *callNode = dynamic_cast<CallNode *>(node);
-    PrintNode *printNode = dynamic_cast<PrintNode *>(node);
-
-    if (program != nullptr)
-    {
-        for (int i = 0; i < program->statements.size(); i++)
-        {
-            if (dynamic_cast<FunctionNode *>(program->statements[i].get()) != nullptr)
-            {
-                continue;
-            }
-
-            compile(program->statements[i].get());
-        }
-
-        return;
-    }
-
-    else if (num != nullptr)
+    if (auto *num = dynamic_cast<NumberNode *>(node))
     {
         chunk.constants.push_back(num->value);
-
-        int index = chunk.constants.size() - 1;
-
         chunk.code.push_back(OP_PUSH);
-        chunk.code.push_back(index);
-
+        chunk.code.push_back(chunk.constants.size() - 1);
         return;
     }
 
-    else if (stringNode != nullptr)
+    if (auto *b = dynamic_cast<BoolNode *>(node))
     {
-        chunk.stringConstants.push_back(stringNode->value);
-
-        int index = chunk.stringConstants.size() - 1;
-
-        chunk.code.push_back(OP_PUSH_STRING);
-        chunk.code.push_back(index);
-
+        chunk.constants.push_back(b->value ? 1.0 : 0.0);
+        chunk.code.push_back(OP_PUSH);
+        chunk.code.push_back(chunk.constants.size() - 1);
         return;
     }
 
-    else if (bin != nullptr)
+    if (auto *s = dynamic_cast<StringNode *>(node))
+    {
+        chunk.stringConstants.push_back(s->value);
+        chunk.code.push_back(OP_PUSH_STRING);
+        chunk.code.push_back(chunk.stringConstants.size() - 1);
+        return;
+    }
+
+    if (auto *neg = dynamic_cast<NegateNode *>(node))
+    {
+        compile(neg->operand.get());
+        chunk.code.push_back(OP_NEGATE);
+        return;
+    }
+
+    if (auto *bin = dynamic_cast<BinaryOpNode *>(node))
     {
         compile(bin->left.get());
         compile(bin->right.get());
-
-        if (bin->op == "+")
-        {
-            chunk.code.push_back(OP_ADD);
-        }
-        else if (bin->op == "-")
-        {
-            chunk.code.push_back(OP_SUB);
-        }
-        else if (bin->op == "*")
-        {
-            chunk.code.push_back(OP_MUL);
-        }
-        else if (bin->op == "/")
-        {
-            chunk.code.push_back(OP_DIV);
-        }
-        else if (bin->op == "<")
-        {
-            chunk.code.push_back(OP_LESS);
-        }
-        else if (bin->op == ">")
-        {
-            chunk.code.push_back(OP_GREATER);
-        }
-        else if (bin->op == "<=")
-        {
-            chunk.code.push_back(OP_LESS_EQUAL);
-        }
-        else if (bin->op == ">=")
-        {
-            chunk.code.push_back(OP_GREATER_EQUAL);
-        }
-        else if (bin->op == "==")
-        {
-            chunk.code.push_back(OP_EQUAL);
-        }
-        else if (bin->op == "!=")
-        {
-            chunk.code.push_back(OP_NOT_EQUAL);
-        }
-        else
-        {
-            throw runtime_error("Unknown operator: " + bin->op);
-        }
-
+        if      (bin->op == "+")  chunk.code.push_back(OP_ADD);
+        else if (bin->op == "-")  chunk.code.push_back(OP_SUB);
+        else if (bin->op == "*")  chunk.code.push_back(OP_MUL);
+        else if (bin->op == "/")  chunk.code.push_back(OP_DIV);
+        else if (bin->op == "<")  chunk.code.push_back(OP_LESS);
+        else if (bin->op == ">")  chunk.code.push_back(OP_GREATER);
+        else if (bin->op == "<=") chunk.code.push_back(OP_LESS_EQUAL);
+        else if (bin->op == ">=") chunk.code.push_back(OP_GREATER_EQUAL);
+        else if (bin->op == "==") chunk.code.push_back(OP_EQUAL);
+        else if (bin->op == "!=") chunk.code.push_back(OP_NOT_EQUAL);
+        else throw runtime_error("Unknown operator: " + bin->op);
         return;
     }
 
-    else if (var != nullptr)
+    if (auto *var = dynamic_cast<VariableNode *>(node))
     {
-        int index = getVariableIndex(var->variableName);
-
         chunk.code.push_back(OP_LOAD);
-        chunk.code.push_back(index);
-
+        chunk.code.push_back(getVariableIndex(var->variableName));
         return;
     }
 
-    else if (assign != nullptr)
+    if (auto *assign = dynamic_cast<AssignmentNode *>(node))
     {
         compile(assign->right.get());
-
-        VariableNode *variable = dynamic_cast<VariableNode *>(assign->left.get());
-
-        int index = getVariableIndex(variable->variableName);
-
+        auto *variable = dynamic_cast<VariableNode *>(assign->left.get());
         chunk.code.push_back(OP_STORE);
-        chunk.code.push_back(index);
-
+        chunk.code.push_back(getVariableIndex(variable->variableName));
         return;
     }
 
-    else if (ifNode != nullptr)
+    if (auto *ifNode = dynamic_cast<IfNode *>(node))
     {
         compile(ifNode->condition.get());
-
         chunk.code.push_back(OP_JUMP_IF_FALSE);
-
-        int jumpIfFalsePosition = chunk.code.size();
-
+        int jumpIfFalsePos = chunk.code.size();
         chunk.code.push_back(0);
-
         compile(ifNode->body.get());
-
         if (ifNode->elseBranch != nullptr)
         {
             chunk.code.push_back(OP_JUMP);
-
-            int jumpPosition = chunk.code.size();
-
+            int jumpPos = chunk.code.size();
             chunk.code.push_back(0);
-
-            chunk.code[jumpIfFalsePosition] = chunk.code.size();
-
+            chunk.code[jumpIfFalsePos] = chunk.code.size();
             compile(ifNode->elseBranch.get());
-
-            chunk.code[jumpPosition] = chunk.code.size();
+            chunk.code[jumpPos] = chunk.code.size();
         }
         else
         {
-            chunk.code[jumpIfFalsePosition] = chunk.code.size();
+            chunk.code[jumpIfFalsePos] = chunk.code.size();
         }
-
         return;
     }
 
-    else if (whileNode != nullptr)
+    if (auto *whileNode = dynamic_cast<WhileNode *>(node))
     {
         int loopStart = chunk.code.size();
-
         compile(whileNode->condition.get());
-
         chunk.code.push_back(OP_JUMP_IF_FALSE);
-
-        int jumpIfFalsePosition = chunk.code.size();
-
+        int jumpIfFalsePos = chunk.code.size();
         chunk.code.push_back(0);
-
         compile(whileNode->body.get());
-
         chunk.code.push_back(OP_JUMP);
         chunk.code.push_back(loopStart);
-
-        chunk.code[jumpIfFalsePosition] = chunk.code.size();
-
+        chunk.code[jumpIfFalsePos] = chunk.code.size();
         return;
     }
 
-    else if (functionNode != nullptr)
+    if (auto *functionNode = dynamic_cast<FunctionNode *>(node))
     {
         int functionIndex = getFunctionIndex(functionNode->functionName);
-
         chunk.functions[functionIndex].address = chunk.code.size();
-
-        for (int i = 0; i < functionNode->parameters.size(); i++)
-        {
-            getVariableIndex(functionNode->parameters[i]);
-        }
-
+        for (auto &p : functionNode->parameters) getVariableIndex(p);
         compile(functionNode->body.get());
-
+        chunk.constants.push_back(0.0);
         chunk.code.push_back(OP_PUSH);
-        chunk.code.push_back(0);
+        chunk.code.push_back(chunk.constants.size() - 1);
         chunk.code.push_back(OP_RETURN);
-
         return;
     }
 
-    else if (returnNode != nullptr)
+    if (auto *returnNode = dynamic_cast<ReturnNode *>(node))
     {
         compile(returnNode->expression.get());
         chunk.code.push_back(OP_RETURN);
-
         return;
     }
 
-    else if (callNode != nullptr)
+    if (auto *callNode = dynamic_cast<CallNode *>(node))
     {
-        for (int i = 0; i < callNode->arguments.size(); i++)
-        {
-            compile(callNode->arguments[i].get());
-        }
-
-        int functionIndex = getFunctionIndex(callNode->functionName);
-
+        for (auto &arg : callNode->arguments) compile(arg.get());
         chunk.code.push_back(OP_CALL);
-        chunk.code.push_back(functionIndex);
-
+        chunk.code.push_back(getFunctionIndex(callNode->functionName));
         return;
     }
 
-    else if (printNode != nullptr)
+    if (auto *printNode = dynamic_cast<PrintNode *>(node))
     {
         compile(printNode->expression.get());
-
         chunk.code.push_back(OP_PRINT);
-
         return;
     }
 
@@ -287,53 +172,36 @@ void Compiler::compile(ASTNode *node)
 Chunk Compiler::run(unique_ptr<ASTNode> root)
 {
     chunk = Chunk();
-
     ProgramNode *program = dynamic_cast<ProgramNode *>(root.get());
 
     if (program != nullptr)
     {
-        for (int i = 0; i < program->statements.size(); i++)
+        for (auto &s : program->statements)
         {
-            FunctionNode *functionNode = dynamic_cast<FunctionNode *>(program->statements[i].get());
-
-            if (functionNode != nullptr)
+            if (auto *fn = dynamic_cast<FunctionNode *>(s.get()))
             {
-                FunctionInfo function;
-
-                function.name = functionNode->functionName;
-                function.address = -1;
-                function.parameterCount = functionNode->parameters.size();
-                function.parameters = functionNode->parameters;
-
-                chunk.functions.push_back(function);
+                FunctionInfo info;
+                info.name = fn->functionName;
+                info.address = -1;
+                info.parameterCount = fn->parameters.size();
+                info.parameters = fn->parameters;
+                chunk.functions.push_back(info);
             }
         }
     }
 
-    int jumpOverFunctions = -1;
-
-    if (chunk.functions.size() > 0)
+    if (!chunk.functions.empty())
     {
         chunk.code.push_back(OP_JUMP);
-        jumpOverFunctions = chunk.code.size();
+        int jumpPos = chunk.code.size();
         chunk.code.push_back(0);
-
-        for (int i = 0; i < program->statements.size(); i++)
-        {
-            FunctionNode *functionNode = dynamic_cast<FunctionNode *>(program->statements[i].get());
-
-            if (functionNode != nullptr)
-            {
-                compile(functionNode);
-            }
-        }
-
-        chunk.code[jumpOverFunctions] = chunk.code.size();
+        for (auto &s : program->statements)
+            if (dynamic_cast<FunctionNode *>(s.get()))
+                compile(s.get());
+        chunk.code[jumpPos] = chunk.code.size();
     }
 
     compile(root.get());
-
     chunk.code.push_back(OP_HALT);
-
     return chunk;
 }

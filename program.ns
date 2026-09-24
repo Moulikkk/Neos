@@ -1,3 +1,6 @@
-name = "Neos"
-greeting = "Hello " + name
-print greeting
+x = 3.14
+y = -5
+flag = true
+print x
+print y
+print flag
