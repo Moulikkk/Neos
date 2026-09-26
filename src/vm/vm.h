@@ -22,4 +22,5 @@ class VM
 
 public:
     void execute(Chunk chunk);
+    void executeRepl(Chunk chunk);
 };

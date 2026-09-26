@@ -44,31 +44,73 @@ void printAST(ASTNode* node, int indent)
     }
 }
 
-int main(int argc, char* argv[])
+void runRepl()
 {
-    if (argc < 2)
-    {
-        cout << "Usage: neos <file.ns>" << endl;
-        return 1;
-    }
+    VM vm;
+    cout << "Neos REPL: type 'exit' to quit" << endl;
 
-    ifstream file(argv[1]);
+    while (true)
+    {
+        cout << "neos> ";
+        string line;
+
+        if (!getline(cin, line))
+            break;
+
+        if (line == "exit")
+            break;
+
+        if (line.empty())
+            continue;
+
+        try
+        {
+            Lexer lexer(line);
+            Parser parser(lexer);
+            Compiler compiler;
+            Chunk chunk = compiler.run(parser.parse());
+            vm.executeRepl(chunk);
+        }
+        catch (const exception &e)
+        {
+            cout << e.what() << endl;
+        }
+    }
+}
+
+void runFile(const string &path)
+{
+    ifstream file(path);
 
     if (!file.is_open())
     {
-        cout << "Error: could not open file '" << argv[1] << "'" << endl;
-        return 1;
+        cout << "Error: could not open file '" << path << "'" << endl;
+        return;
     }
 
     string source(istreambuf_iterator<char>(file), {});
 
-    Lexer lexer(source);
-    Parser parser(lexer);
-    Compiler compiler;
-    VM vm;
+    try
+    {
+        Lexer lexer(source);
+        Parser parser(lexer);
+        Compiler compiler;
+        VM vm;
+        Chunk chunk = compiler.run(parser.parse());
+        vm.execute(chunk);
+    }
+    catch (const exception &e)
+    {
+        cout << e.what() << endl;
+    }
+}
 
-    Chunk chunk = compiler.run(parser.parse());
-    vm.execute(chunk);
+int main(int argc, char *argv[])
+{
+    if (argc < 2)
+        runRepl();
+    else
+        runFile(argv[1]);
 
     return 0;
 }
