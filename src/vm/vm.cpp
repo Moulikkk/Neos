@@ -22,8 +22,10 @@ static void runChunk(Chunk &chunk, vector<Value> &stack, map<string, Value> &var
         }
         else if (chunk.code[ip] == OP_ADD)
         {
-            Value right = stack.back(); stack.pop_back();
-            Value left  = stack.back(); stack.pop_back();
+            Value right = stack.back();
+            stack.pop_back();
+            Value left = stack.back();
+            stack.pop_back();
 
             if (holds_alternative<string>(left) && holds_alternative<string>(right))
                 stack.push_back(get<string>(left) + get<string>(right));
@@ -35,58 +37,86 @@ static void runChunk(Chunk &chunk, vector<Value> &stack, map<string, Value> &var
         }
         else if (chunk.code[ip] == OP_SUB)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(left - right); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(left - right);
+            ip++;
         }
         else if (chunk.code[ip] == OP_MUL)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(left * right); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(left * right);
+            ip++;
         }
         else if (chunk.code[ip] == OP_DIV)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            if (right == 0) throw runtime_error("[Neos Error] runtime: division by zero");
-            stack.push_back(left / right); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            if (right == 0)
+                throw runtime_error("[Neos Error] runtime: division by zero");
+            stack.push_back(left / right);
+            ip++;
         }
         else if (chunk.code[ip] == OP_LESS)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(static_cast<double>(left < right)); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(static_cast<double>(left < right));
+            ip++;
         }
         else if (chunk.code[ip] == OP_GREATER)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(static_cast<double>(left > right)); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(static_cast<double>(left > right));
+            ip++;
         }
         else if (chunk.code[ip] == OP_LESS_EQUAL)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(static_cast<double>(left <= right)); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(static_cast<double>(left <= right));
+            ip++;
         }
         else if (chunk.code[ip] == OP_GREATER_EQUAL)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(static_cast<double>(left >= right)); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(static_cast<double>(left >= right));
+            ip++;
         }
         else if (chunk.code[ip] == OP_EQUAL)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(static_cast<double>(left == right)); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(static_cast<double>(left == right));
+            ip++;
         }
         else if (chunk.code[ip] == OP_NOT_EQUAL)
         {
-            double right = get<double>(stack.back()); stack.pop_back();
-            double left  = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(static_cast<double>(left != right)); ip++;
+            double right = get<double>(stack.back());
+            stack.pop_back();
+            double left = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(static_cast<double>(left != right));
+            ip++;
         }
         else if (chunk.code[ip] == OP_JUMP)
         {
@@ -95,27 +125,45 @@ static void runChunk(Chunk &chunk, vector<Value> &stack, map<string, Value> &var
         }
         else if (chunk.code[ip] == OP_JUMP_IF_FALSE)
         {
-            double condition = get<double>(stack.back()); stack.pop_back();
+            double condition = get<double>(stack.back());
+            stack.pop_back();
             ip++;
             int destination = chunk.code[ip];
-            if (!condition) ip = destination;
-            else ip++;
+            if (!condition)
+                ip = destination;
+            else
+                ip++;
         }
         else if (chunk.code[ip] == OP_STORE)
         {
-            Value value = stack.back(); stack.pop_back();
+            Value value = stack.back();
+            stack.pop_back();
             ip++;
             string name = chunk.variables[chunk.code[ip]];
-            if (callStack.empty()) variables[name] = value;
-            else callStack.back().variables[name] = value;
+            if (callStack.empty())
+                variables[name] = value;
+            else
+                callStack.back().variables[name] = value;
             ip++;
         }
         else if (chunk.code[ip] == OP_LOAD)
         {
             ip++;
             string name = chunk.variables[chunk.code[ip]];
-            if (callStack.empty()) stack.push_back(variables[name]);
-            else stack.push_back(callStack.back().variables[name]);
+
+            if (callStack.empty())
+            {
+                if (variables.find(name) == variables.end())
+                    throw runtime_error("[Neos Error] runtime: variable '" + name + "' is not defined");
+                stack.push_back(variables[name]);
+            }
+            else
+            {
+                if (callStack.back().variables.find(name) == callStack.back().variables.end())
+                    throw runtime_error("[Neos Error] runtime: variable '" + name + "' is not defined");
+                stack.push_back(callStack.back().variables[name]);
+            }
+
             ip++;
         }
         else if (chunk.code[ip] == OP_CALL)
@@ -127,7 +175,8 @@ static void runChunk(Chunk &chunk, vector<Value> &stack, map<string, Value> &var
             frame.returnAddress = ip + 1;
             for (int i = function.parameterCount - 1; i >= 0; i--)
             {
-                Value argument = stack.back(); stack.pop_back();
+                Value argument = stack.back();
+                stack.pop_back();
                 frame.variables[function.parameters[i]] = argument;
             }
             callStack.push_back(frame);
@@ -135,7 +184,8 @@ static void runChunk(Chunk &chunk, vector<Value> &stack, map<string, Value> &var
         }
         else if (chunk.code[ip] == OP_RETURN)
         {
-            Value returnValue = stack.back(); stack.pop_back();
+            Value returnValue = stack.back();
+            stack.pop_back();
             int returnAddress = callStack.back().returnAddress;
             callStack.pop_back();
             stack.push_back(returnValue);
@@ -143,15 +193,20 @@ static void runChunk(Chunk &chunk, vector<Value> &stack, map<string, Value> &var
         }
         else if (chunk.code[ip] == OP_PRINT)
         {
-            Value value = stack.back(); stack.pop_back();
-            if (holds_alternative<double>(value)) cout << get<double>(value) << endl;
-            else cout << get<string>(value) << endl;
+            Value value = stack.back();
+            stack.pop_back();
+            if (holds_alternative<double>(value))
+                cout << get<double>(value) << endl;
+            else
+                cout << get<string>(value) << endl;
             ip++;
         }
         else if (chunk.code[ip] == OP_NEGATE)
         {
-            double val = get<double>(stack.back()); stack.pop_back();
-            stack.push_back(-val); ip++;
+            double val = get<double>(stack.back());
+            stack.pop_back();
+            stack.push_back(-val);
+            ip++;
         }
         else if (chunk.code[ip] == OP_HALT)
         {
