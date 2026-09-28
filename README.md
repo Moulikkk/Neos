@@ -1,6 +1,6 @@
-# MyLang
+# Neos
 
-A scripting language and bytecode virtual machine built from scratch in C++.
+A minimal scripting language and bytecode virtual machine built from scratch in C++.
 No libraries. Just a handwritten lexer, parser, compiler, and VM.
 
 ## Status
@@ -9,9 +9,13 @@ No libraries. Just a handwritten lexer, parser, compiler, and VM.
 - [x] Bytecode compiler
 - [x] Virtual machine
 - [x] Variables and control flow (if/else, while loops)
-- [x] Print statement
-- [x] Functions
-- [ ] Debugging tools (disassembler or REPL)
+- [x] Functions with return values and recursion
+- [x] Strings with concatenation
+- [x] Decimal numbers, negation, boolean literals
+- [x] File reading (.ns files)
+- [x] Descriptive error messages with line numbers
+- [x] REPL — interactive prompt
+- [x] Disassembler — human readable bytecode output
 
 ## How it works
 Source code goes through a 4-stage pipeline:
@@ -25,27 +29,50 @@ Source → Lexer → Parser → Compiler → Bytecode → VM → Output
 
 ## Build & Run
 ```bash
-g++ src/main.cpp src/lexer/lexer.cpp src/parser/parser.cpp src/compiler/compiler.cpp src/vm/vm.cpp -o lang
-./lang
+g++ src/main.cpp src/lexer/lexer.cpp src/parser/parser.cpp src/compiler/compiler.cpp src/vm/vm.cpp src/disassembler/disassembler.cpp -o neos
+```
+
+Run a file:
+```bash
+./neos program.ns
+```
+
+Run with disassembler:
+```bash
+./neos program.ns --disasm
+```
+
+Start the REPL:
+```bash
+./neos
 ```
 
 ## Example
 ```
-"fn add(a, b) {\n"
-        "return a + b\n"
-        "}\n"
-        "x = add(10, 20)\n"
-        "y = add(3, 7)\n"
-        "print x\n"
-        "print y\n"
+fn fib(n) {
+    if (n < 2) {
+        return n
+    }
+    return fib(n - 1) + fib(n - 2)
+}
+
+print fib(10)
 ```
-Output: 
-30
-10
+Output: 55
+
+## Disassembler Output
+```
+== program.ns ==
+0000  OP_PUSH              constants[0] = 5
+0002  OP_STORE             variables[0] = x
+0004  OP_LOAD              variables[0] = x
+0006  OP_PRINT
+0007  OP_HALT
+```
 
 ## Project Structure
 ```
-MyLang/
+Neos/
 ├── src/
 │   ├── lexer/
 │   │   ├── lexer.h
@@ -59,16 +86,19 @@ MyLang/
 │   ├── vm/
 │   │   ├── vm.h
 │   │   └── vm.cpp
+│   ├── disassembler/
+│   │   ├── disassembler.h
+│   │   └── disassembler.cpp
 │   └── main.cpp
 ├── .gitignore
 └── README.md
 ```
 
 ## Goals
-- Fast execution via stack-based bytecode
+- Minimal footprint — runs on anything, no dependencies
 - Clean, readable syntax
-- Built-in debugging tools (disassembler or REPL)
+- Transparent execution via built-in disassembler
+- Fast bytecode execution
 
 ## Progress
-Building this over the summer as a 1st year CS student.
-Documenting the process as I go.
+Built over the summer as a 2nd year CS student.

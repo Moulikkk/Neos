@@ -4,6 +4,7 @@
 #include "parser/parser.h"
 #include "compiler/compiler.h"
 #include "vm/vm.h"
+#include "disassembler/disassembler.h"
 
 using namespace std;
 
@@ -47,7 +48,7 @@ void printAST(ASTNode* node, int indent)
 void runRepl()
 {
     VM vm;
-    cout << "Neos REPL: type 'exit' to quit" << endl;
+    cout << "Neos REPL — type 'exit' to quit" << endl;
 
     while (true)
     {
@@ -78,7 +79,7 @@ void runRepl()
     }
 }
 
-void runFile(const string &path)
+void runFile(const string &path, bool disasm)
 {
     ifstream file(path);
 
@@ -96,7 +97,15 @@ void runFile(const string &path)
         Parser parser(lexer);
         Compiler compiler;
         VM vm;
+
         Chunk chunk = compiler.run(parser.parse());
+
+        if (disasm)
+        {
+            Disassembler disassembler;
+            disassembler.disassemble(chunk, path);
+        }
+
         vm.execute(chunk);
     }
     catch (const exception &e)
@@ -108,9 +117,15 @@ void runFile(const string &path)
 int main(int argc, char *argv[])
 {
     if (argc < 2)
+    {
         runRepl();
-    else
-        runFile(argv[1]);
+        return 0;
+    }
 
+    bool disasm = false;
+    if (argc >= 3 && string(argv[2]) == "--disasm")
+        disasm = true;
+
+    runFile(argv[1], disasm);
     return 0;
 }
