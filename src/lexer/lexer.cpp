@@ -29,7 +29,19 @@ Token Lexer::nextToken()
     if (input[curr_position] == '+') { curr_position++; return {TokenType::PLUS, "+", line}; }
     if (input[curr_position] == '-') { curr_position++; return {TokenType::MINUS, "-", line}; }
     if (input[curr_position] == '*') { curr_position++; return {TokenType::STAR, "*", line}; }
-    if (input[curr_position] == '/') { curr_position++; return {TokenType::SLASH, "/", line}; }
+
+    if (input[curr_position] == '/')
+    {
+        if (curr_position + 1 < input.size() && input[curr_position + 1] == '/')
+        {
+            while (curr_position < input.size() && input[curr_position] != '\n')
+                curr_position++;
+            return nextToken();
+        }
+        curr_position++;
+        return {TokenType::SLASH, "/", line};
+    }
+
     if (input[curr_position] == '(') { curr_position++; return {TokenType::LPAREN, "(", line}; }
     if (input[curr_position] == ')') { curr_position++; return {TokenType::RPAREN, ")", line}; }
     if (input[curr_position] == '{') { curr_position++; return {TokenType::LBRACE, "{", line}; }
@@ -95,7 +107,6 @@ Token Lexer::nextToken()
             curr_position++;
         }
 
-        // decimal support
         if (curr_position < input.size() && input[curr_position] == '.')
         {
             Number.value.push_back('.');
